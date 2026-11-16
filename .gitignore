@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+*.log
+.env
+.env.*
+__pycache__/
+*.pyc
+.pytest_cache/
+# Keep session archives and recorded event fixtures tracked per deliverables:
+!*.jsonl
+!assignments/assignment1/sessions/
+!assignments/assignment1/fixtures/

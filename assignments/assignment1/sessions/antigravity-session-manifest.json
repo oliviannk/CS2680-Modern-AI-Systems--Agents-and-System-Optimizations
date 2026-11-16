@@ -1,0 +1,56 @@
+{
+  "developedWith": "Google DeepMind Antigravity",
+  "developedWithClaudeCode": false,
+  "pluginsUsed": [
+    "modern-web-guidance-plugin"
+  ],
+  "modernWebGuidanceIdsApplied": [
+    "accordion",
+    "light-dismiss-a-dialog",
+    "dark-mode",
+    "sanitize-untrusted-html"
+  ],
+  "date": "2026-11-16",
+  "deliverables": {
+    "server": "assignments/assignment1/server.js",
+    "runner": "assignments/assignment1/lib/claude-runner.js",
+    "frontend": [
+      "assignments/assignment1/public/index.html",
+      "assignments/assignment1/public/styles.css",
+      "assignments/assignment1/public/app.js",
+      "assignments/assignment1/public/lib/trajectory-model.js",
+      "assignments/assignment1/public/lib/markdown.js"
+    ],
+    "fixtures": [
+      "assignments/assignment1/fixtures/01-fix-bug.jsonl",
+      "assignments/assignment1/fixtures/02-resume-followup.jsonl",
+      "assignments/assignment1/fixtures/03-subagent-survey.jsonl"
+    ],
+    "tests": "assignments/assignment1/test/assignment1.test.js",
+    "writeups": [
+      "assignments/assignment1/writeup.md",
+      "assignments/assignment1/writeup_zh.md"
+    ],
+    "screenshot": "assignments/assignment1/assets/screenshot.png"
+  },
+  "verifications": {
+    "unitTests": {
+      "command": "node --test test/assignment1.test.js",
+      "passed": 7,
+      "failed": 0
+    },
+    "browserChecks": {
+      "viewport": "1440x920",
+      "origin": "http://127.0.0.1:3456",
+      "featuresVerified": [
+        "live SSE trajectory streaming and Markdown rendering",
+        "8-line tool output truncation and fold toggle on 90+ line pytest error",
+        "bad working directory (/bad/path) immediate error state",
+        "multi-turn session resume continuity and earlier turn folding",
+        "nested parent_tool_use_id subagent trees and side-by-side outline",
+        "Changed Files light-dismiss modal dialog and idle Stop button visibility fix",
+        "internal trajectory-feed scrolling with flex-shrink: 0"
+      ]
+    }
+  }
+}

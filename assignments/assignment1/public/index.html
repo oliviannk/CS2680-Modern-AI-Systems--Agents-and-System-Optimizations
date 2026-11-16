@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>CS2680 A1 · Claude Code Trajectory Observatory</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header & Parallel Session Tabs -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-title-row">
+          <h1 class="brand-title">Claude Code Trajectory Observatory</h1>
+          <span class="badge badge-provenance" title="Frontend and backend engineered with Google DeepMind Antigravity">
+            Built with Antigravity
+          </span>
+        </div>
+        <p class="brand-subtitle">
+          CS2680 Assignment 1 · Headless <code>stream-json</code> Runner &amp; Subagent Tree Viewer
+        </p>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" id="btn-outline-toggle" class="btn btn-ghost mobile-only" aria-expanded="false">
+          Outline
+        </button>
+        <button type="button" id="btn-changed-files" class="btn btn-ghost">
+          Changed Files <span id="changed-files-count" class="count-pill">0</span>
+        </button>
+        <button type="button" id="btn-import-jsonl" class="btn btn-ghost">
+          Import .jsonl
+        </button>
+        <button type="button" id="btn-export-jsonl" class="btn btn-ghost" disabled>
+          Export .jsonl
+        </button>
+        <button type="button" id="btn-theme-toggle" class="btn btn-ghost" title="Toggle light/dark theme">
+          Theme: Auto
+        </button>
+      </div>
+    </header>
+
+    <!-- Parallel Session Tabs -->
+    <nav class="session-tabs-bar" aria-label="Agent sessions">
+      <div id="session-tabs" class="session-tabs" role="tablist"></div>
+      <button type="button" id="btn-new-session" class="btn btn-subtle">
+        + New Session
+      </button>
+    </nav>
+
+    <!-- Main Two-Column Workspace: Dialogue Stream + Sticky Side Outline -->
+    <div class="workspace-grid">
+      <main class="dialogue-column" aria-label="Agent trajectory">
+        <!-- Session Telemetry Summary Strip -->
+        <section class="session-telemetry" aria-label="Active session telemetry">
+          <div class="telemetry-item">
+            <span class="telemetry-label">Session</span>
+            <code id="session-id-display" class="telemetry-value">new (no session yet)</code>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Env</span>
+            <span id="env-status-badge" class="telemetry-value">checking…</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Session Total</span>
+            <span id="session-totals-display" class="telemetry-value tabular">$0.0000 · 0.0 s · 0 turns</span>
+          </div>
+          <div id="api-key-warning" class="api-warning" hidden>
+            ⚠ <code>ANTHROPIC_API_KEY</code> is set in env — overrides subscription login
+          </div>
+        </section>
+
+        <!-- Trajectory Feed -->
+        <div id="trajectory-feed" class="trajectory-feed" aria-live="polite">
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state">
+            <h2>Ready to observe a headless Claude Code run</h2>
+            <p>
+              Enter a prompt and working directory below, or launch a deterministic replay scenario
+              to inspect live event streaming, truncated test logs, session resume, error banners,
+              and nested <code>parent_tool_use_id</code> subagent trees.
+            </p>
+            <div class="quick-scenarios">
+              <button type="button" class="chip-btn" data-preset="01-fix-bug">
+                ▶ 1. Fix Bug (Error + 90-line Fold)
+              </button>
+              <button type="button" class="chip-btn" data-preset="02-resume-followup">
+                ▶ 2. Resume Session (--json Flag)
+              </button>
+              <button type="button" class="chip-btn" data-preset="03-subagent-survey">
+                ▶ 3. Subagent Tree Survey
+              </button>
+              <button type="button" class="chip-btn chip-danger" data-preset="bad-path">
+                ✕ 4. Failing Run (/bad/path)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Bottom Composer -->
+        <form id="run-composer" class="composer" autocomplete="off">
+          <div class="composer-controls-row">
+            <label class="field-inline field-workdir">
+              <span class="field-label">working directory</span>
+              <input
+                type="text"
+                id="input-cwd"
+                name="cwd"
+                spellcheck="false"
+                placeholder="/path/to/repo"
+                required
+              >
+            </label>
+            <div class="workdir-chips">
+              <button type="button" id="btn-use-demo-dir" class="mini-chip">demo-repo</button>
+              <button type="button" id="btn-use-bad-dir" class="mini-chip mini-chip-danger">/bad/path</button>
+            </div>
+
+            <div class="mode-group" role="group" aria-label="Execution mode">
+              <label class="mode-option">
+                <input type="radio" name="execMode" value="replay" checked>
+                <span>Replay (.jsonl)</span>
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="execMode" value="live">
+                <span>Live Claude CLI</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Conditional Options Row -->
+          <div class="composer-subrow">
+            <div id="replay-controls" class="subrow-group">
+              <label class="field-compact">
+                <span class="field-label">Fixture</span>
+                <select id="select-fixture">
+                  <option value="01-fix-bug">01 · Fix parser bug (pytest error + fold)</option>
+                  <option value="02-resume-followup">02 · Resume session (--json flag)</option>
+                  <option value="03-subagent-survey">03 · Subagent survey tree + README</option>
+                </select>
+              </label>
+              <label class="field-compact">
+                <span class="field-label">Speed</span>
+                <select id="select-speed">
+                  <option value="1x">1x Live feel</option>
+                  <option value="4x" selected>4x Fast</option>
+                  <option value="instant">Instant</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="live-controls" class="subrow-group" hidden>
+              <label class="field-compact">
+                <span class="field-label">Permissions</span>
+                <select id="select-permission-mode">
+                  <option value="skip">--dangerously-skip-permissions</option>
+                  <option value="allowedTools">--allowedTools (scoped)</option>
+                </select>
+              </label>
+              <label id="allowed-tools-wrap" class="field-compact" hidden>
+                <span class="field-label">Tools</span>
+                <input
+                  type="text"
+                  id="input-allowed-tools"
+                  value="Read,Grep,Glob,Edit,Bash(pytest:*),Bash(python3:*)"
+                >
+              </label>
+            </div>
+
+            <div id="resume-indicator" class="resume-pill" hidden>
+              Will resume <code id="resume-session-code"></code>
+            </div>
+          </div>
+
+          <div class="composer-prompt-row">
+            <textarea
+              id="input-prompt"
+              name="prompt"
+              rows="2"
+              placeholder="Ask Claude Code to inspect, fix, or refactor the directory (Shift+Enter for newline, Enter to Run)..."
+            ></textarea>
+            <div class="composer-buttons">
+              <button type="submit" id="btn-run" class="btn btn-primary">Run</button>
+              <button type="button" id="btn-stop" class="btn btn-danger" hidden>Stop</button>
+            </div>
+          </div>
+        </form>
+      </main>
+
+      <!-- Side-by-Side Trajectory Outline (Desktop >= 960px, Drawer below) -->
+      <aside id="outline-panel" class="outline-panel" aria-label="Trajectory outline">
+        <div class="outline-header">
+          <div class="outline-title-row">
+            <span class="outline-title">Outline</span>
+            <span id="outline-count" class="count-pill">0</span>
+          </div>
+          <input
+            type="search"
+            id="input-outline-filter"
+            class="outline-search"
+            placeholder="Filter calls, files, tools…"
+            aria-label="Filter trajectory"
+          >
+          <div class="filter-pills" role="group" aria-label="Trajectory filters">
+            <button type="button" class="filter-pill is-active" data-filter="all">All</button>
+            <button type="button" class="filter-pill" data-filter="error">Errors</button>
+            <button type="button" class="filter-pill" data-filter="edit">Edits</button>
+            <button type="button" class="filter-pill" data-filter="subagent">Subagents</button>
+          </div>
+        </div>
+        <div id="outline-list" class="outline-list">
+          <p class="outline-empty">Tool calls appear here as the trajectory streams.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Light-Dismiss Modal: Session Changed Files Diff Viewer -->
+  <dialog id="changes-dialog" class="modal-dialog" closedby="any" aria-labelledby="changes-dialog-title">
+    <div class="dialog-header">
+      <h2 id="changes-dialog-title">Changed Files &amp; Inline Diffs</h2>
+      <button type="button" class="btn btn-ghost btn-close-dialog" data-close-dialog="changes-dialog">
+        Close
+      </button>
+    </div>
+    <div id="changes-dialog-body" class="dialog-body"></div>
+  </dialog>
+
+  <!-- Light-Dismiss Modal: Custom .jsonl Stream Replay Import -->
+  <dialog id="import-dialog" class="modal-dialog modal-dialog-narrow" closedby="any" aria-labelledby="import-dialog-title">
+    <form id="import-form" class="dialog-form">
+      <div class="dialog-header">
+        <h2 id="import-dialog-title">Replay Custom stream-json (.jsonl)</h2>
+        <button type="button" class="btn btn-ghost btn-close-dialog" data-close-dialog="import-dialog">
+          Close
+        </button>
+      </div>
+      <div class="dialog-body">
+        <p class="dialog-note">
+          Load a saved <code>claude -p ... --output-format stream-json --verbose &gt; events.jsonl</code>
+          capture from disk or paste NDJSON lines below.
+        </p>
+        <label class="file-drop-label">
+          <span>Choose .jsonl file</span>
+          <input type="file" id="import-file-input" accept=".jsonl,.ndjson,.json,.txt">
+        </label>
+        <textarea
+          id="import-jsonl-textarea"
+          rows="8"
+          placeholder='{"type":"system","subtype":"init",...}'
+        ></textarea>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-ghost" data-close-dialog="import-dialog">Cancel</button>
+        <button type="submit" class="btn btn-primary">Replay Stream</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

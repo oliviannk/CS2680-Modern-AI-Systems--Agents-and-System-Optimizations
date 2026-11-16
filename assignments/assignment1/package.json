@@ -1,0 +1,14 @@
+{
+  "name": "cs2680-assignment1-claude-observer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web trajectory viewer and runner for headless Claude Code (CS2680 Assignment 1, developed with Antigravity)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
